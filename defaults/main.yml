@@ -16,3 +16,4 @@ prometheus_postgres_query_filenames:
 
 prometheus_postgres_query_directory: files/
 
+prometheus_postgres_binary_install_dir: "/usr/local/bin"

@@ -8,8 +8,7 @@
     recurse: true
     state: directory
   with_items:
-    - /opt/prometheus/postgres
-    - /etc/prometheus
+    - /etc/postgres_exporter
 
 - name: prometheus postgres | download
   become: true
@@ -17,19 +16,14 @@
     url: "https://github.com/wrouesnel/postgres_exporter/releases/download/\
       v{{ prometheus_postgres_version }}/\
       postgres_exporter_v{{ prometheus_postgres_version }}_linux-amd64.tar.gz"
-    # "https://github.com/wrouesnel/postgres_exporter/releases/download/\
-    # v{{ prometheus_postgres_version }}/postgres_exporter"
     checksum: sha256:{{ prometheus_postgres_sha256 }}
-    dest: "/opt/prometheus/postgres_exporter\
-      _v{{ prometheus_postgres_version }}_linux-amd64.tar.gz"
-    # dest: /opt/prometheus/postgres/postgres_exporter-0.2.2
+    dest: "/tmp/postgres_exporter_v{{ prometheus_postgres_version }}_linux-amd64.tar.gz"
 
 - name: prometheus postgres | install postgres-exporter
   become: true
   unarchive:
-    src: "/opt/prometheus/postgres_exporter\
-      _v{{ prometheus_postgres_version }}_linux-amd64.tar.gz"
-    dest: /opt/prometheus
+    src: "/tmp/postgres_exporter_v{{ prometheus_postgres_version }}_linux-amd64.tar.gz"
+    dest: /tmp/postgres_exporter
     group: root
     owner: root
     remote_src: true
@@ -37,18 +31,17 @@
 - name: prometheus postgres | symlink postgres-exporter
   become: true
   file:
-    src: "/opt/prometheus/postgres_exporter\
-      _v{{ prometheus_postgres_version }}_linux-amd64"
-    path: /opt/prometheus/postgres_exporter
+    src: "/tmp/postgres_exporter/postgres_exporter"
+    path: "{{ prometheus_postgres_binary_install_dir }}"
     force: true
-    state: link
+    state: present
   notify:
     - restart prometheus-postgres
 
 - name: prometheus postgres | configuration file
   become: true
   assemble:
-    dest: /etc/prometheus/postgres-queries.yml
+    dest: /etc/postgres_exporter/postgres-queries.yml
     regexp: "^{{ prometheus_postgres_query_filenames | join('|') }}$"
     remote_src: false
     src: "{{ prometheus_postgres_query_directory }}"
@@ -58,8 +51,8 @@
 - name: prometheus postgres | server systemd service
   become: true
   template:
-    dest: /etc/systemd/system/prometheus-postgres-exporter.service
-    src: systemd-system-prometheus-postgres-exporter-service.j2
+    dest: /etc/systemd/system/postgres_exporter.service
+    src: postgres_exporter-service.j2
   notify:
     - restart prometheus-postgres
 
@@ -68,5 +61,5 @@
   systemd:
     daemon_reload: true
     enabled: true
-    name: prometheus-postgres-exporter.service
+    name: postgres_exporter.service
     state: started

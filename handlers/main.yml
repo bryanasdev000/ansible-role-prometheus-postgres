@@ -5,5 +5,5 @@
   become: true
   systemd:
     daemon_reload: true
-    name: prometheus-postgres-exporter.service
+    name: postgres_exporter.service
     state: restarted
