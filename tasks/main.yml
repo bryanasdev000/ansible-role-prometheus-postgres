@@ -9,6 +9,7 @@
     state: directory
   with_items:
     - /etc/postgres_exporter
+    - /tmp/postgres_exporter
 
 - name: prometheus postgres | download
   become: true
@@ -30,11 +31,13 @@
 
 - name: prometheus postgres | symlink postgres-exporter
   become: true
-  file:
-    src: "/tmp/postgres_exporter/postgres_exporter"
-    path: "{{ prometheus_postgres_binary_install_dir }}"
-    force: true
-    state: present
+  copy:
+    src: "/tmp/postgres_exporter/postgres_exporter_v{{ prometheus_postgres_version }}_linux-amd64/postgres_exporter"
+    dest: "{{ prometheus_postgres_binary_install_dir }}/postgres_exporter"
+    mode: 0755
+    owner: root
+    group: root
+    remote_src: true
   notify:
     - restart prometheus-postgres
 
